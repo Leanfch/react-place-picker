@@ -1,16 +1,24 @@
-import { useRef, useState, useEffect } from "react"
-import { sortPlacesByDistance } from "./loc.js"
-import Places from "./components/Places.jsx"
-import { AVAILABLE_PLACES } from "./data.js"
-import Modal from "./components/Modal.jsx"
-import DeleteConfirmation from "./components/DeleteConfirmation.jsx"
-import logoImg from "./assets/logo.png"
+import { useRef, useState, useEffect } from "react";
+import { sortPlacesByDistance } from "./loc.js";
+import Places from "./components/Places.jsx";
+import { AVAILABLE_PLACES } from "./data.js";
+import Modal from "./components/Modal.jsx";
+import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
+import logoImg from "./assets/logo.png";
+
+const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+const storedPlaces = storedIds.map((id) =>
+    AVAILABLE_PLACES.find((place) => place.id === id)
+);
+
+console.log("Stored IDs:", storedIds);
+console.log("Stored Places:", storedPlaces);
 
 function App() {
-    const modal = useRef()
-    const selectedPlace = useRef()
-    const [availablePlaces, setAvailablePlaces] = useState([])
-    const [pickedPlaces, setPickedPlaces] = useState([])
+    const modal = useRef();
+    const selectedPlace = useRef();
+    const [availablePlaces, setAvailablePlaces] = useState([]);
+    const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
 
     useEffect(() => {
         navigator.geolocation.getCurrentPosition((position) => {
@@ -19,43 +27,58 @@ function App() {
                 position.coords.latitude,
                 position.coords.longitude
             );
-    
+
             setAvailablePlaces(sortedPlaces);
         });
     }, []);
 
     function handleStartRemovePlace(id) {
-        modal.current.open()
-        selectedPlace.current = id
+        modal.current.open();
+        selectedPlace.current = id;
     }
 
     function handleStopRemovePlace() {
-        modal.current.close()
+        modal.current.close();
     }
-
     function handleSelectPlace(id) {
         setPickedPlaces((prevPickedPlaces) => {
             if (prevPickedPlaces.some((place) => place.id === id)) {
-                return prevPickedPlaces
+                return prevPickedPlaces;
             }
-            const place = AVAILABLE_PLACES.find((place) => place.id === id)
-            return [place, ...prevPickedPlaces]
-        })
-
-        const storedIds = JSON.parse(localStorage.getItem('selectedPlaces')) || [];
-
-        if (pickedPlaces.indexOf(id) === -1) {
-            localStorage.setItem('selectedPlaces', JSON.stringify([id,...storedIds] || []))
-        }
+            const place = AVAILABLE_PLACES.find((place) => place.id === id);
+            const updatedPickedPlaces = [place, ...prevPickedPlaces];
+    
+            // Actualizar el localStorage dentro del mismo setState
+            const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+            if (!storedIds.includes(id)) {
+                localStorage.setItem(
+                    "selectedPlaces",
+                    JSON.stringify([id, ...storedIds])
+                );
+            }
+    
+            return updatedPickedPlaces;
+        });
     }
-
+    
     function handleRemovePlace() {
-        setPickedPlaces((prevPickedPlaces) =>
-            prevPickedPlaces.filter(
+        setPickedPlaces((prevPickedPlaces) => {
+            const updatedPickedPlaces = prevPickedPlaces.filter(
                 (place) => place.id !== selectedPlace.current
-            )
-        )
-        modal.current.close()
+            );
+    
+            // Actualizar el localStorage dentro del mismo setState
+            const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+            localStorage.setItem(
+                "selectedPlaces",
+                JSON.stringify(
+                    storedIds.filter((id) => id !== selectedPlace.current)
+                )
+            );
+    
+            return updatedPickedPlaces;
+        });
+        modal.current.close();
     }
 
     return (
@@ -92,7 +115,7 @@ function App() {
                 />
             </main>
         </>
-    )
+    );
 }
 
-export default App
+export default App;
