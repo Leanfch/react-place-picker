@@ -11,12 +11,10 @@ const storedPlaces = storedIds.map((id) =>
     AVAILABLE_PLACES.find((place) => place.id === id)
 );
 
-console.log("Stored IDs:", storedIds);
-console.log("Stored Places:", storedPlaces);
-
 function App() {
     const modal = useRef();
     const selectedPlace = useRef();
+    const [modalIsOpen, setModalIsOpen] = useState(false);
     const [availablePlaces, setAvailablePlaces] = useState([]);
     const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
 
@@ -33,12 +31,12 @@ function App() {
     }, []);
 
     function handleStartRemovePlace(id) {
-        modal.current.open();
+        setModalIsOpen(true);
         selectedPlace.current = id;
     }
 
     function handleStopRemovePlace() {
-        modal.current.close();
+        setModalIsOpen(false);
     }
     function handleSelectPlace(id) {
         setPickedPlaces((prevPickedPlaces) => {
@@ -47,8 +45,7 @@ function App() {
             }
             const place = AVAILABLE_PLACES.find((place) => place.id === id);
             const updatedPickedPlaces = [place, ...prevPickedPlaces];
-    
-            // Actualizar el localStorage dentro del mismo setState
+
             const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
             if (!storedIds.includes(id)) {
                 localStorage.setItem(
@@ -67,7 +64,6 @@ function App() {
                 (place) => place.id !== selectedPlace.current
             );
     
-            // Actualizar el localStorage dentro del mismo setState
             const storedIds = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
             localStorage.setItem(
                 "selectedPlaces",
@@ -78,12 +74,12 @@ function App() {
     
             return updatedPickedPlaces;
         });
-        modal.current.close();
+        setModalIsOpen(false);
     }
 
     return (
         <>
-            <Modal ref={modal}>
+            <Modal ref={modal} open={modalIsOpen} onClose={handleStopRemovePlace}>
                 <DeleteConfirmation
                     onCancel={handleStopRemovePlace}
                     onConfirm={handleRemovePlace}
